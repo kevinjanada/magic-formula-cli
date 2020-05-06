@@ -55,6 +55,23 @@ func commands(db *gorm.DB) {
 			Action: actions.GetStocks(db),
 		},
 		{
+			Name:   "download-reports",
+			Usage:  "Download excel reports",
+			Action: actions.DownloadReports(db),
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "year, y",
+					Value: "2019",
+					Usage: "Get reports for the year",
+				},
+				cli.StringFlag{
+					Name:  "period, p",
+					Value: "3",
+					Usage: "Period of the year",
+				},
+			},
+		},
+		{
 			Name:   "import-reports",
 			Usage:  "Import excel reports to DB",
 			Action: actions.ImportReports(db),
