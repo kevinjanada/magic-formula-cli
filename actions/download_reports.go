@@ -25,20 +25,25 @@ func DownloadReports(db *gorm.DB) func(c *cli.Context) {
 		year := c.String("year")
 		period := c.String("period")
 
+		// Limit concurrency to 12
+		sem := make(chan struct{}, 12)
+
 		var wg sync.WaitGroup
 		wg.Add(len(stocks))
 		for _, stock := range stocks {
-			go fetchAndDownloadReports(stock.Code, year, period, &wg)
+			go fetchAndDownloadReports(stock.Code, year, period, &wg, sem)
 		}
 		wg.Wait()
 	}
 }
 
-func fetchAndDownloadReports(stockCode string, year string, period string, wg *sync.WaitGroup) {
+func fetchAndDownloadReports(stockCode string, year string, period string, wg *sync.WaitGroup, sem chan struct{}) {
+	sem <- struct{}{}
+	defer func() { <-sem }()
+
 	defer wg.Done()
 
 	URL := generateURL(1, 1, year, period, stockCode)
-	fmt.Printf("fetching data for %s \n", stockCode)
 
 	resp, err := http.Get(URL)
 	if err != nil {
@@ -47,7 +52,7 @@ func fetchAndDownloadReports(stockCode string, year string, period string, wg *s
 	}
 	defer resp.Body.Close()
 
-	finRep := &FinancialReportAPIResponse{}
+	finRep := &FinancialReportAPIResponse{Year: year, Period: fmt.Sprintf("trimester_%s", period)}
 	err = helpers.JSONToStruct(resp, finRep)
 	if err != nil {
 		fmt.Println(err)
