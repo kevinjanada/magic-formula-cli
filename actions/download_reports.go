@@ -26,7 +26,7 @@ func DownloadReports(db *gorm.DB) func(c *cli.Context) {
 		period := c.String("period")
 
 		// Limit concurrency to 12
-		sem := make(chan struct{}, 12)
+		sem := make(chan struct{}, 20)
 
 		var wg sync.WaitGroup
 		wg.Add(len(stocks))
